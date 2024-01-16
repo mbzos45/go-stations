@@ -1,12 +1,13 @@
 package main
 
 import (
-	"log"
-	"os"
-	"time"
-
+	"database/sql"
 	"github.com/TechBowl-japan/go-stations/db"
 	"github.com/TechBowl-japan/go-stations/handler/router"
+	"log"
+	"net/http"
+	"os"
+	"time"
 )
 
 func main() {
@@ -45,12 +46,20 @@ func realMain() error {
 	if err != nil {
 		return err
 	}
-	defer todoDB.Close()
+	defer func(todoDB *sql.DB) {
+		err := todoDB.Close()
+		if err != nil {
+
+		}
+	}(todoDB)
 
 	// NOTE: 新しいエンドポイントの登録はrouter.NewRouterの内部で行うようにする
 	mux := router.NewRouter(todoDB)
 
 	// TODO: サーバーをlistenする
-
+	err = http.ListenAndServe(defaultPort, mux)
+	if err != nil {
+		return err
+	}
 	return nil
 }
