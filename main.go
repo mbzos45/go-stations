@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"github.com/TechBowl-japan/go-stations/db"
+	"github.com/TechBowl-japan/go-stations/handler"
 	"github.com/TechBowl-japan/go-stations/handler/router"
 	"log"
 	"net/http"
@@ -49,13 +50,14 @@ func realMain() error {
 	defer func(todoDB *sql.DB) {
 		err := todoDB.Close()
 		if err != nil {
-
 		}
 	}(todoDB)
 
 	// NOTE: 新しいエンドポイントの登録はrouter.NewRouterの内部で行うようにする
 	mux := router.NewRouter(todoDB)
-
+	// Handler 設定
+	healthzHandler := handler.NewHealthzHandler()
+	mux.HandleFunc("/healthz", healthzHandler.ServeHTTP)
 	// TODO: サーバーをlistenする
 	err = http.ListenAndServe(defaultPort, mux)
 	if err != nil {
