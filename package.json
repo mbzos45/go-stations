@@ -19,5 +19,9 @@
   },
   "simple-git-hooks": {
     "pre-commit": "yarn hook:pre-commit"
+  },
+  "volta": {
+    "node": "20.11.0",
+    "yarn": "1.22.21"
   }
 }
