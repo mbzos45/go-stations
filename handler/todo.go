@@ -2,6 +2,9 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
+	"log"
+	"net/http"
 
 	"github.com/TechBowl-japan/go-stations/model"
 	"github.com/TechBowl-japan/go-stations/service"
@@ -10,6 +13,35 @@ import (
 // A TODOHandler implements handling REST endpoints.
 type TODOHandler struct {
 	svc *service.TODOService
+}
+
+func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		req := &model.CreateTODORequest{}
+		deq := json.NewDecoder(r.Body)
+		if err := deq.Decode(&req); err != nil {
+			log.Println(err)
+		}
+		if req.Subject == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		todo, err := h.svc.CreateTODO(r.Context(), req.Subject, req.Description)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		res := &model.CreateTODOResponse{TODO: *todo}
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			log.Println(err)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	default:
+		return
+	}
+
 }
 
 // NewTODOHandler returns TODOHandler based http.Handler.
