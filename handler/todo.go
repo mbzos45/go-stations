@@ -27,12 +27,11 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		todo, err := h.svc.CreateTODO(r.Context(), req.Subject, req.Description)
+		res, err := h.Create(r.Context(), req)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		res := &model.CreateTODOResponse{TODO: *todo}
 		if err := json.NewEncoder(w).Encode(res); err != nil {
 			log.Println(err)
 			return
@@ -51,19 +50,19 @@ func NewTODOHandler(svc *service.TODOService) *TODOHandler {
 	}
 }
 
-// Create handles the endpoint that creates the TODO.
+// Create handles the endpoint that creates the TODO_item.
 func (h *TODOHandler) Create(ctx context.Context, req *model.CreateTODORequest) (*model.CreateTODOResponse, error) {
-	_, _ = h.svc.CreateTODO(ctx, "", "")
-	return &model.CreateTODOResponse{}, nil
+	todo, err := h.svc.CreateTODO(ctx, req.Subject, req.Description)
+	return &model.CreateTODOResponse{TODO: *todo}, err
 }
 
-// Read handles the endpoint that reads the TODOs.
+// Read handles the endpoint that reads the TODO_items.
 func (h *TODOHandler) Read(ctx context.Context, req *model.ReadTODORequest) (*model.ReadTODOResponse, error) {
 	_, _ = h.svc.ReadTODO(ctx, 0, 0)
 	return &model.ReadTODOResponse{}, nil
 }
 
-// Update handles the endpoint that updates the TODO.
+// Update handles the endpoint that updates the TODO_item.
 func (h *TODOHandler) Update(ctx context.Context, req *model.UpdateTODORequest) (*model.UpdateTODOResponse, error) {
 	_, _ = h.svc.UpdateTODO(ctx, 0, "", "")
 	return &model.UpdateTODOResponse{}, nil
