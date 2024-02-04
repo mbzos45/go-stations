@@ -95,6 +95,30 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+	case http.MethodDelete:
+		req := &model.DeleteTODORequest{}
+		deq := json.NewDecoder(r.Body)
+		if err := deq.Decode(req); err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if len(req.IDs) == 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		res, err := h.Delete(r.Context(), req)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 	default:
 		return
 	}
