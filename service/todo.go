@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/TechBowl-japan/go-stations/model"
 	"log"
+	"strings"
 )
 
 // A TODOService implements CRUD of TODO entities.
@@ -158,6 +160,32 @@ func (s *TODOService) UpdateTODO(ctx context.Context, id int64, subject, descrip
 // DeleteTODO deletes TODOs on DB by ids.
 func (s *TODOService) DeleteTODO(ctx context.Context, ids []int64) error {
 	const deleteFmt = `DELETE FROM todos WHERE id IN (?%s)`
-
+	if len(ids) != 0 {
+		stmt, err := s.db.PrepareContext(ctx, fmt.Sprintf(deleteFmt, strings.Repeat(",?", len(ids)-1)))
+		if err != nil {
+			return err
+		}
+		defer func(stmt *sql.Stmt) {
+			err := stmt.Close()
+			if err != nil {
+				log.Println(err)
+			}
+		}(stmt)
+		var arg []interface{}
+		for _, v := range ids {
+			arg = append(arg, v)
+		}
+		res, err := stmt.ExecContext(ctx, arg...)
+		if err != nil {
+			return err
+		}
+		rows, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rows == 0 {
+			return &model.ErrNotFound{}
+		}
+	}
 	return nil
 }
