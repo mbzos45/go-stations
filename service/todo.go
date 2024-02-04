@@ -3,9 +3,8 @@ package service
 import (
 	"context"
 	"database/sql"
-	"log"
-
 	"github.com/TechBowl-japan/go-stations/model"
+	"log"
 )
 
 // A TODOService implements CRUD of TODO entities.
@@ -63,8 +62,60 @@ func (s *TODOService) ReadTODO(ctx context.Context, prevID, size int64) ([]*mode
 		read       = `SELECT id, subject, description, created_at, updated_at FROM todos ORDER BY id DESC LIMIT ?`
 		readWithID = `SELECT id, subject, description, created_at, updated_at FROM todos WHERE id < ? ORDER BY id DESC LIMIT ?`
 	)
-
-	return nil, nil
+	var todos []*model.TODO
+	var rows *sql.Rows
+	if prevID == 0 {
+		stmt, err := s.db.PrepareContext(ctx, read)
+		if err != nil {
+			return nil, err
+		}
+		defer func(stmt *sql.Stmt) {
+			if err := stmt.Close(); err != nil {
+				log.Println(err)
+			}
+		}(stmt)
+		rows, err = stmt.QueryContext(ctx, size)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+	} else {
+		stmt, err := s.db.PrepareContext(ctx, readWithID)
+		if err != nil {
+			return nil, err
+		}
+		defer func(stmt *sql.Stmt) {
+			if err := stmt.Close(); err != nil {
+				log.Println(err)
+			}
+		}(stmt)
+		rows, err = stmt.QueryContext(ctx, prevID, size)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+	}
+	defer func(rows *sql.Rows) {
+		if err := rows.Close(); err != nil {
+			log.Println(err)
+		}
+	}(rows)
+	for rows.Next() {
+		todo := model.TODO{}
+		if err := rows.Scan(&todo.ID, &todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt); err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		todos = append(todos, &todo)
+	}
+	if err := rows.Err(); err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if len(todos) == 0 {
+		return []*model.TODO{}, nil
+	}
+	return todos, nil
 }
 
 // UpdateTODO updates the TODO on DB.
