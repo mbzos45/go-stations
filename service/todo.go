@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"log"
 
 	"github.com/TechBowl-japan/go-stations/model"
 )
@@ -36,6 +37,7 @@ func (s *TODOService) CreateTODO(ctx context.Context, subject, description strin
 	defer func(stmt *sql.Stmt) {
 		err := stmt.Close()
 		if err != nil {
+			log.Println(err)
 		}
 	}(stmt)
 	res, err := stmt.ExecContext(ctx, todo.Subject, todo.Description)
@@ -47,7 +49,6 @@ func (s *TODOService) CreateTODO(ctx context.Context, subject, description strin
 		return nil, err
 	}
 	todo.ID = id
-
 	row := s.db.QueryRowContext(ctx, confirm, id)
 	err = row.Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
 	if err != nil {
@@ -72,8 +73,35 @@ func (s *TODOService) UpdateTODO(ctx context.Context, id int64, subject, descrip
 		update  = `UPDATE todos SET subject = ?, description = ? WHERE id = ?`
 		confirm = `SELECT subject, description, created_at, updated_at FROM todos WHERE id = ?`
 	)
-
-	return nil, nil
+	stmt, err := s.db.PrepareContext(ctx, update)
+	if err != nil {
+		return nil, err
+	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(stmt)
+	res, err := stmt.ExecContext(ctx, subject, description, id)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if rows == 0 {
+		return nil, &model.ErrNotFound{}
+	}
+	todo := &model.TODO{
+		ID: id,
+	}
+	err = s.db.QueryRowContext(ctx, confirm, id).Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return todo, nil
 }
 
 // DeleteTODO deletes TODOs on DB by ids.
