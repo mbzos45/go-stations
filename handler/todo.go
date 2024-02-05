@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/TechBowl-japan/go-stations/model"
 	"github.com/TechBowl-japan/go-stations/service"
 	"io"
@@ -57,6 +58,7 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		res, err := h.Update(r.Context(), req)
 		if err != nil {
 			log.Println(err)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		if err := json.NewEncoder(w).Encode(res); err != nil {
@@ -110,7 +112,11 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		res, err := h.Delete(r.Context(), req)
 		if err != nil {
 			log.Println(err)
-			w.WriteHeader(http.StatusNotFound)
+			var nfErr *model.ErrNotFound
+			if errors.As(err, &nfErr) {
+				w.WriteHeader(http.StatusNotFound)
+			}
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		if err := json.NewEncoder(w).Encode(res); err != nil {

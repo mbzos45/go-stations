@@ -49,13 +49,14 @@ func realMain() error {
 	defer func(todoDB *sql.DB) {
 		err := todoDB.Close()
 		if err != nil {
+			log.Println(err)
 		}
 	}(todoDB)
 
 	// NOTE: 新しいエンドポイントの登録はrouter.NewRouterの内部で行うようにする
 	mux := router.NewRouter(todoDB)
 	// TODO: サーバーをlistenする
-	err = http.ListenAndServe(defaultPort, mux)
+	err = http.ListenAndServe(port, mux)
 	if err != nil {
 		return err
 	}
