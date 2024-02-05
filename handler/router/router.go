@@ -18,8 +18,7 @@ func NewRouter(todoDB *sql.DB) *negroni.Negroni {
 	mux.Handle("/do-panic", middleware.Recovery(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("intended panic")
 	})))
-	n := negroni.New()
-	n.Use(negroni.NewRecovery())
+	n := negroni.Classic()
 	n.UseHandler(mux)
 	return n
 }
