@@ -6,6 +6,7 @@ import (
 	"github.com/TechBowl-japan/go-stations/handler/middleware"
 	"github.com/TechBowl-japan/go-stations/service"
 	"github.com/urfave/negroni"
+	"log"
 	"net/http"
 )
 
@@ -18,7 +19,16 @@ func NewRouter(todoDB *sql.DB) *negroni.Negroni {
 	mux.Handle("/do-panic", middleware.Recovery(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("intended panic")
 	})))
-	n := negroni.Classic()
+	mux.Handle("/client_os", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		os, err := middleware.GetClientOS(r.Context())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		log.Println(os)
+	}))
+	n := negroni.New()
+	n.Use(negroni.HandlerFunc(middleware.SetClientOS))
 	n.UseHandler(mux)
 	return n
 }
