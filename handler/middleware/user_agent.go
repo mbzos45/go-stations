@@ -7,18 +7,18 @@ import (
 	"net/http"
 )
 
-const clientOSKey = "client_OS"
+const UAKey = "user_agent"
 
-func SetClientOS(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+func SetUA(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	ua := useragent.Parse(r.UserAgent())
-	ctx := context.WithValue(r.Context(), clientOSKey, ua.OS)
+	ctx := context.WithValue(r.Context(), UAKey, ua)
 	next(rw, r.WithContext(ctx))
 }
 
 func GetClientOS(ctx context.Context) (string, error) {
-	os, ok := ctx.Value(clientOSKey).(string)
+	ua, ok := ctx.Value(UAKey).(useragent.UserAgent)
 	if !ok {
-		return "", fmt.Errorf("clientOS not found")
+		return "", fmt.Errorf("userAgent not found")
 	}
-	return os, nil
+	return ua.OS, nil
 }
