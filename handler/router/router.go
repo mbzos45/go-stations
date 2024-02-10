@@ -29,6 +29,7 @@ func NewRouter(todoDB *sql.DB) *negroni.Negroni {
 	}))
 	n := negroni.New()
 	n.Use(negroni.HandlerFunc(middleware.SetUA))
+	n.Use(negroni.HandlerFunc(middleware.Logger))
 	n.UseHandler(mux)
 	return n
 }
