@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"github.com/TechBowl-japan/go-stations/db"
 	"github.com/TechBowl-japan/go-stations/handler/router"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -55,8 +58,23 @@ func realMain() error {
 
 	// NOTE: 新しいエンドポイントの登録はrouter.NewRouterの内部で行うようにする
 	mux := router.NewRouter(todoDB)
-	// TODO: サーバーをlistenする
-	err = http.ListenAndServe(port, mux)
+	srv := &http.Server{
+		Addr:    port,
+		Handler: mux,
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt, os.Kill)
+	defer stop()
+	go func() {
+		err := srv.ListenAndServe()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+	<-ctx.Done()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = srv.Shutdown(ctx)
 	if err != nil {
 		return err
 	}

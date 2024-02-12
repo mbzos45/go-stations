@@ -9,10 +9,13 @@ import (
 
 const UAKey = "user_agent"
 
-func SetUA(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	ua := useragent.Parse(r.UserAgent())
-	ctx := context.WithValue(r.Context(), UAKey, ua)
-	next(rw, r.WithContext(ctx))
+func SetUA(h http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		ua := useragent.Parse(r.UserAgent())
+		ctx := context.WithValue(r.Context(), UAKey, ua)
+		h.ServeHTTP(w, r.WithContext(ctx))
+	}
+	return http.HandlerFunc(fn)
 }
 
 func GetClientOS(ctx context.Context) (string, error) {

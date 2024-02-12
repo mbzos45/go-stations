@@ -5,12 +5,12 @@ import (
 	"github.com/TechBowl-japan/go-stations/handler"
 	"github.com/TechBowl-japan/go-stations/handler/middleware"
 	"github.com/TechBowl-japan/go-stations/service"
-	"github.com/urfave/negroni"
+	"github.com/justinas/alice"
 	"log"
 	"net/http"
 )
 
-func NewRouter(todoDB *sql.DB) *negroni.Negroni {
+func NewRouter(todoDB *sql.DB) http.Handler {
 	// register routes
 	mux := http.NewServeMux()
 	// assign Handler
@@ -27,9 +27,14 @@ func NewRouter(todoDB *sql.DB) *negroni.Negroni {
 		}
 		log.Println(os)
 	}))
-	n := negroni.New()
-	n.Use(negroni.HandlerFunc(middleware.SetUA))
-	n.Use(negroni.HandlerFunc(middleware.Logger))
-	n.UseHandler(mux)
-	return n
+	mux.Handle("/auth", middleware.Auth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/text")
+		_, err := w.Write([]byte("authorized"))
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	})))
+	chain := alice.New(middleware.Recovery, middleware.SetUA, middleware.Logger)
+	return chain.Then(mux)
 }
