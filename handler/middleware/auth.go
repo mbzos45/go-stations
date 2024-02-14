@@ -16,9 +16,7 @@ func Auth(h http.Handler) http.Handler {
 	pw := os.Getenv(pwKey)
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		id, sec, ok := r.BasicAuth()
-		if id == uid && sec == pw && !ok {
-			h.ServeHTTP(w, r)
-		} else {
+		if id != uid || sec != pw || !ok {
 			w.Header().Set("WWW-Authenticate", "Basic")
 			w.WriteHeader(http.StatusUnauthorized)
 			_, err := w.Write([]byte("Unauthorized"))
@@ -28,7 +26,7 @@ func Auth(h http.Handler) http.Handler {
 			}
 			return
 		}
-
+		h.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)
 }
