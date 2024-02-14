@@ -8,6 +8,7 @@ import (
 	"github.com/justinas/alice"
 	"log"
 	"net/http"
+	"time"
 )
 
 func NewRouter(todoDB *sql.DB) http.Handler {
@@ -28,6 +29,7 @@ func NewRouter(todoDB *sql.DB) http.Handler {
 		log.Println(os)
 	}))
 	mux.Handle("/auth", middleware.Auth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/text")
 		_, err := w.Write([]byte("authorized"))
 		if err != nil {
@@ -35,6 +37,16 @@ func NewRouter(todoDB *sql.DB) http.Handler {
 			return
 		}
 	})))
+	mux.Handle("/sluggish_func", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(10 * time.Second)
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/text")
+		_, err := w.Write([]byte("Done sluggish_func"))
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}))
 	chain := alice.New(middleware.Recovery, middleware.SetUA, middleware.Logger)
 	return chain.Then(mux)
 }
