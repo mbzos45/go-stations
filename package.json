@@ -21,7 +21,7 @@
     "pre-commit": "yarn hook:pre-commit"
   },
   "volta": {
-    "node": "20.11.0",
-    "yarn": "1.22.21"
+    "node": "16.20.0",
+    "yarn": "1.22.22"
   }
 }
